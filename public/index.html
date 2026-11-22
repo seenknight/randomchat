@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>randomchat</title>
+  <meta name="description" content="Meet someone new. We introduce two strangers by email.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg1: #f4f1ff; --bg2: #ffeef4;
+      --card: #ffffff; --ink: #231f3a; --muted: #7a7596;
+      --brand: #6c4cf1; --brand-2: #ff5c8a; --line: #e3dcff;
+      --err: #d6336c; --ok: #12a66a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg1: #15122b; --bg2: #26122a;
+        --card: #1f1b3a; --ink: #f1eeff; --muted: #a49fc4; --line: #3a3366;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px;
+      font-family: 'Inter', 'Vazirmatn', system-ui, sans-serif; color: var(--ink);
+      background: linear-gradient(135deg, var(--bg1), var(--bg2)) fixed;
+    }
+    html[lang="fa"] body { font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif; }
+    .wrap { width: 100%; max-width: 440px; }
+    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .logo { font-weight: 700; font-size: 22px; letter-spacing: -0.5px; }
+    .logo span { color: var(--brand); }
+    .lang {
+      border: 1px solid var(--line); background: var(--card); color: var(--ink);
+      border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 14px; cursor: pointer;
+    }
+    .lang:hover { border-color: var(--brand); }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+      padding: 28px; box-shadow: 0 10px 40px rgba(108, 76, 241, .12);
+    }
+    h1 { font-size: 24px; margin: 0 0 6px; line-height: 1.3; }
+    .sub { color: var(--muted); margin: 0 0 22px; font-size: 15px; line-height: 1.6; }
+    label.field { display: block; font-weight: 600; font-size: 14px; margin-bottom: 16px; }
+    input[type=email], input[type=number] {
+      width: 100%; margin-top: 6px; padding: 12px 14px; font: inherit; font-weight: 400;
+      color: var(--ink); background: transparent; border: 1.5px solid var(--line);
+      border-radius: 12px; outline: none; transition: border-color .15s;
+    }
+    input:focus { border-color: var(--brand); }
+    input[type=email] { direction: ltr; text-align: left; }
+    .legend { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .seg label {
+      text-align: center; padding: 12px; border: 1.5px solid var(--line); border-radius: 12px;
+      cursor: pointer; font-weight: 500; transition: all .15s;
+    }
+    .seg input:checked + label { border-color: var(--brand); background: rgba(108, 76, 241, .1); color: var(--brand); }
+    .seg input:focus-visible + label { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--muted); line-height: 1.6; margin: 4px 0 20px; }
+    .consent input { margin-top: 4px; accent-color: var(--brand); }
+    button.go {
+      width: 100%; padding: 14px; border: 0; border-radius: 12px; cursor: pointer;
+      font: inherit; font-weight: 600; font-size: 16px; color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    }
+    button.go:disabled { opacity: .6; cursor: wait; }
+    .msg { margin-top: 14px; font-size: 14px; color: var(--err); min-height: 20px; }
+    .success { text-align: center; padding: 10px 0; }
+    .success .big { font-size: 52px; }
+    .success p { font-size: 18px; line-height: 1.8; margin: 12px 0 0; }
+    .hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+    .hidden { display: none; }
+    footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="logo">random<span>chat</span></div>
+      <button class="lang" id="langBtn" type="button">فارسی</button>
+    </div>
+
+    <div class="card">
+      <form id="form" novalidate>
+        <h1 data-i18n="title"></h1>
+        <p class="sub" data-i18n="subtitle"></p>
+
+        <label class="field">
+          <span data-i18n="email"></span>
+          <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
+        </label>
+
+        <div class="legend" data-i18n="gender"></div>
+        <div class="seg">
+          <input type="radio" name="gender" id="g-f" value="female"><label for="g-f" data-i18n="female"></label>
+          <input type="radio" name="gender" id="g-m" value="male"><label for="g-m" data-i18n="male"></label>
+        </div>
+
+        <label class="field">
+          <span data-i18n="age"></span>
+          <input type="number" id="age" name="age" min="18" max="100" inputmode="numeric" required>
+        </label>
+
+        <div class="hp" aria-hidden="true">
+          <label>Website <input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+
+        <label class="consent">
+          <input type="checkbox" id="consent">
+          <span data-i18n="consent"></span>
+        </label>
+
+        <button class="go" id="submit" type="submit" data-i18n="submit"></button>
+        <div class="msg" id="msg" role="alert"></div>
+      </form>
+
+      <div class="success hidden" id="success">
+        <div class="big">🎉</div>
+        <p data-i18n="success"></p>
+      </div>
+    </div>
+    <footer data-i18n="footer"></footer>
+  </div>
+
+<script>
+const I18N = {
+  en: {
+    title: 'Meet someone new',
+    subtitle: 'Leave your details and we will introduce you to a random stranger by email.',
+    email: 'Email',
+    gender: 'Gender',
+    female: 'Female',
+    male: 'Male',
+    age: 'Age (years)',
+    consent: 'I am 18 or older, and I agree that my email address will be shared with the person I am matched with.',
+    submit: 'Submit',
+    success: 'Thank you. Your information was submitted successfully. Wait for an email from an anonymous user, and have fun!',
+    footer: 'randomchat',
+    errors: {
+      invalid_email: 'Please enter a valid email address.',
+      invalid_gender: 'Please choose your gender.',
+      invalid_age: 'Age must be a whole number between 18 and 100.',
+      consent_required: 'Please confirm the checkbox to continue.',
+      generic: 'Something went wrong. Please try again.'
+    },
+    langBtn: 'فارسی'
+  },
+  fa: {
+    title: 'با یک آدم جدید آشنا شو',
+    subtitle: 'اطلاعاتت رو وارد کن تا از طریق ایمیل با یک غریبه‌ی تصادفی آشنات کنیم.',
+    email: 'ایمیل',
+    gender: 'جنسیت',
+    female: 'زن',
+    male: 'مرد',
+    age: 'سن (سال)',
+    consent: 'من ۱۸ سال یا بیشتر دارم و موافقم که ایمیلم برای فردی که با او آشنا می‌شوم نمایش داده شود.',
+    submit: 'ثبت',
+    success: 'سپاس. اطلاعات با موفقیت وارد شد. منتظر دریافت ایمیل از طرف یک کاربر ناشناس باشید و خوش بگذره!',
+    footer: 'randomchat',
+    errors: {
+      invalid_email: 'لطفاً یک ایمیل معتبر وارد کنید.',
+      invalid_gender: 'لطفاً جنسیت خود را انتخاب کنید.',
+      invalid_age: 'سن باید یک عدد صحیح بین ۱۸ تا ۱۰۰ باشد.',
+      consent_required: 'برای ادامه، تیک تأیید را بزنید.',
+      generic: 'مشکلی پیش آمد. لطفاً دوباره تلاش کنید.'
+    },
+    langBtn: 'English'
+  }
+};
+
+let lang = 'en';
+try { lang = localStorage.getItem('rc_lang') || ((navigator.language || '').startsWith('fa') ? 'fa' : 'en'); } catch (e) {}
+
+function applyLang() {
+  const t = I18N[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t[el.dataset.i18n]; });
+  document.getElementById('langBtn').textContent = t.langBtn;
+  document.getElementById('msg').textContent = '';
+  try { localStorage.setItem('rc_lang', lang); } catch (e) {}
+}
+document.getElementById('langBtn').addEventListener('click', () => { lang = lang === 'en' ? 'fa' : 'en'; applyLang(); });
+applyLang();
+
+// Accept Persian/Arabic digits in the age field.
+function normalizeDigits(s) {
+  return String(s).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776).replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632);
+}
+
+const form = document.getElementById('form');
+const msg = document.getElementById('msg');
+const btn = document.getElementById('submit');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const t = I18N[lang];
+  msg.textContent = '';
+
+  const email = document.getElementById('email').value.trim();
+  const gender = (form.querySelector('input[name=gender]:checked') || {}).value;
+  const age = Number(normalizeDigits(document.getElementById('age').value));
+  const consent = document.getElementById('consent').checked;
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return (msg.textContent = t.errors.invalid_email);
+  if (!gender) return (msg.textContent = t.errors.invalid_gender);
+  if (!Number.isInteger(age) || age < 18 || age > 100) return (msg.textContent = t.errors.invalid_age);
+  if (!consent) return (msg.textContent = t.errors.consent_required);
+
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, gender, age, consent, website: document.getElementById('website').value })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      form.classList.add('hidden');
+      document.getElementById('success').classList.remove('hidden');
+    } else {
+      msg.textContent = t.errors[data.error] || t.errors.generic;
+    }
+  } catch (err) {
+    msg.textContent = t.errors.generic;
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
