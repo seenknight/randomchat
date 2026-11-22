@@ -6,4 +6,4 @@ pages_build_output_dir = "public"
 binding = "DB"
 database_name = "randomchat-db"
 # Replace with the id printed by: npx wrangler d1 create randomchat-db
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "9062e282-9e7c-4998-befb-0fbcf0f5a78e"
