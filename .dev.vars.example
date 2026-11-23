@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local development (never commit .dev.vars)
+ADMIN_PASSWORD=change-me-to-a-long-random-password
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx
+FROM_EMAIL=randomchat <hello@your-domain.com>

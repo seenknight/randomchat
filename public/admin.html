@@ -57,6 +57,16 @@
     th, td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: start; }
     td.em { direction: ltr; unicode-bidi: embed; }
     th { color: var(--muted); font-weight: 500; }
+    .setting { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0 18px; }
+    .setting small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .switch { position: relative; width: 48px; height: 28px; flex: none; }
+    .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; margin: 0; cursor: pointer; z-index: 1; }
+    .switch span { position: absolute; inset: 0; background: var(--line); border-radius: 999px; transition: background .15s; }
+    .switch span::after { content: ''; position: absolute; top: 3px; inset-inline-start: 3px; width: 22px; height: 22px; background: #fff; border-radius: 50%; transition: transform .15s; }
+    .switch input:checked + span { background: var(--brand); }
+    .switch input:checked + span::after { transform: translateX(20px); }
+    html[dir="rtl"] .switch input:checked + span::after { transform: translateX(-20px); }
+    .switch input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
     .hidden { display: none; }
     .empty { color: var(--muted); font-size: 14px; }
   </style>
@@ -86,6 +96,13 @@
         <div class="stat"><b id="sM">0</b><span data-i18n="males"></span></div>
         <div class="stat"><b id="sMatches">0</b><span data-i18n="matches"></span></div>
       </div>
+      <div class="setting">
+        <div>
+          <b id="cityToggleLbl" data-i18n="cityToggle"></b>
+          <small data-i18n="cityHint"></small>
+        </div>
+        <label class="switch"><input type="checkbox" id="cityEnabled" aria-labelledby="cityToggleLbl"><span></span></label>
+      </div>
       <button class="go" id="matchBtn" type="button" data-i18n="send"></button>
       <div class="result hidden" id="result"></div>
     </div>
@@ -103,6 +120,8 @@ const I18N = {
     admin: 'admin', logout: 'Log out', login: 'Admin login', password: 'Password', enter: 'Enter',
     users: 'Users', females: 'Women', males: 'Men', matches: 'Intros sent',
     send: 'Send a random introduction', sending: 'Sending…', recent: 'Recent introductions',
+    cityToggle: 'City field', cityHint: 'Show the city question on the signup form and prefer people from the same city.',
+    e_settings_unavailable: 'Could not save the setting. Did you run migration.sql on the database?',
     none: 'No introductions yet.', sentTo: 'Introduction sent to:', age: 'age',
     e_unauthorized: 'Wrong password.',
     e_no_pair_available: 'No eligible pair left (need users of opposite gender who have not been introduced yet).',
@@ -114,6 +133,8 @@ const I18N = {
     admin: 'مدیریت', logout: 'خروج', login: 'ورود مدیر', password: 'رمز عبور', enter: 'ورود',
     users: 'کاربران', females: 'زن', males: 'مرد', matches: 'آشنایی‌های ارسال‌شده',
     send: 'ارسال یک آشنایی تصادفی', sending: 'در حال ارسال…', recent: 'آشنایی‌های اخیر',
+    cityToggle: 'فیلد شهر', cityHint: 'سؤال شهر در فرم ثبت‌نام نمایش داده شود و همشهری‌ها در انتخاب اولویت داشته باشند.',
+    e_settings_unavailable: 'ذخیره‌ی تنظیم ممکن نشد. آیا فایل migration.sql را روی دیتابیس اجرا کرده‌ای؟',
     none: 'هنوز آشنایی‌ای ارسال نشده.', sentTo: 'ایمیل آشنایی ارسال شد به:', age: 'سن',
     e_unauthorized: 'رمز عبور اشتباه است.',
     e_no_pair_available: 'جفت مناسبی باقی نمانده (به کاربران غیرهمجنسی نیاز است که قبلاً با هم آشنا نشده‌اند).',
@@ -162,6 +183,7 @@ async function loadStats() {
   $('sF').textContent = data.counts.females;
   $('sM').textContent = data.counts.males;
   $('sMatches').textContent = data.counts.matches;
+  $('cityEnabled').checked = data.city_enabled !== false;
 
   const box = $('recent');
   box.textContent = '';
@@ -172,7 +194,8 @@ async function loadStats() {
   const table = document.createElement('table');
   for (const r of data.recent) {
     const tr = document.createElement('tr');
-    for (const txt of [r.email_a + ' (' + r.age_a + ')', r.email_b + ' (' + r.age_b + ')', r.created_at]) {
+    const who = (e, a, c) => e + ' (' + a + (c ? ', ' + c : '') + ')';
+    for (const txt of [who(r.email_a, r.age_a, r.city_a), who(r.email_b, r.age_b, r.city_b), r.created_at]) {
       const td = document.createElement('td'); td.textContent = txt; td.className = 'em'; tr.appendChild(td);
     }
     table.appendChild(tr);
@@ -204,6 +227,23 @@ $('loginBtn').addEventListener('click', async () => {
 });
 $('pw').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('loginBtn').click(); });
 
+$('cityEnabled').addEventListener('change', async (e) => {
+  const box = e.target, want = box.checked, out = $('result');
+  box.disabled = true;
+  try {
+    const { data } = await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ city_enabled: want }) });
+    if (!data.ok) {
+      box.checked = !want;
+      out.className = 'result err';
+      out.textContent = errText(data.error || 'generic');
+    }
+  } catch (err) {
+    box.checked = !want;
+  } finally {
+    box.disabled = false;
+  }
+});
+
 $('matchBtn').addEventListener('click', async () => {
   const btn = $('matchBtn'), out = $('result');
   btn.disabled = true; btn.textContent = t('sending'); out.className = 'result hidden';
@@ -216,7 +256,7 @@ $('matchBtn').addEventListener('click', async () => {
       data.pair.forEach((u, i) => {
         if (i) out.appendChild(document.createTextNode(' ↔ '));
         const s = document.createElement('span'); s.className = 'em';
-        s.textContent = u.email + ' (' + t('age') + ' ' + u.age + ')';
+        s.textContent = u.email + ' (' + t('age') + ' ' + u.age + (u.city ? ', ' + u.city : '') + ')';
         out.appendChild(s);
       });
       loadStats();

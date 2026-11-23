@@ -2,8 +2,15 @@
 
 A tiny site that introduces two random strangers by email.
 
-- **Public page** (`/`): visitors enter email, gender (female/male) and age. Data goes into a Cloudflare D1 database. English + Persian (فارسی) toggle.
-- **Admin panel** (`/admin.html`): password-protected. One button picks two users at random — always opposite gender, closest possible age, never the same pair twice — and emails both of them (each sees the other's address).
+- **Public page** (`/`): visitors enter email, gender (female/male), age and (optionally) city. Data goes into a Cloudflare D1 database. English + Persian (فارسی) toggle.
+- **Admin panel** (`/admin.html`): password-protected. One button picks two users at random and emails both of them (each sees the other's address and details). A switch in the panel turns the city question on/off.
+
+**Matching priorities** (strongest first):
+1. Opposite gender - mandatory. If nobody of the opposite gender is available, nobody is introduced.
+2. Closest possible age.
+3. Same city - last priority, only breaks ties between equally close ages.
+
+The first person is picked at random; their partner is then chosen by the priorities above. A pair is never introduced twice.
 
 Stack: Cloudflare Pages + Pages Functions + D1 + [Resend](https://resend.com) for email.
 
@@ -63,6 +70,9 @@ Redeploy once (Deployments → Retry) so bindings take effect. Optionally add a 
 ### 5. Use it
 - Visitors: `https://<your-site>/`
 - You: `https://<your-site>/admin.html` → enter the password → press **Send a random introduction**.
+
+## Upgrading an existing database (adding cities)
+Do this **before** deploying the new code. In the Cloudflare D1 console run the four statements of `migration.sql` one by one. Existing users keep working (they just have no city).
 
 ## Local development
 ```bash

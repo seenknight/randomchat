@@ -24,3 +24,21 @@ export function isAdmin(request, env) {
 
 export const escapeHtml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Settings live in the `settings` table. City is ON unless the admin switched it off.
+export async function getCityEnabled(env) {
+  try {
+    const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'city_enabled'").first();
+    return row ? row.value !== '0' : true;
+  } catch {
+    return true; // settings table missing (migration not run yet)
+  }
+}
+
+export async function setCityEnabled(env, enabled) {
+  await env.DB.prepare(
+    "INSERT INTO settings (key, value) VALUES ('city_enabled', ?1) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  )
+    .bind(enabled ? '1' : '0')
+    .run();
+}
