@@ -223,7 +223,10 @@ function showCity(on) {
   cityEnabled = on;
   document.getElementById('cityField').classList.toggle('hidden', !on);
 }
-fetch('/api/config').then(r => r.json()).then(d => { if (d && d.ok) showCity(d.city_enabled !== false); }).catch(() => {});
+let verifyRequired = true;
+fetch('/api/config').then(r => r.json()).then(d => {
+  if (d && d.ok) { showCity(d.city_enabled !== false); verifyRequired = d.verify_required !== false; }
+}).catch(() => {});
 
 const form = document.getElementById('form');
 const msg = document.getElementById('msg');
@@ -256,6 +259,7 @@ form.addEventListener('submit', async (e) => {
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.ok) {
       form.classList.add('hidden');
+      document.querySelector('#success .note').classList.toggle('hidden', !verifyRequired);
       document.getElementById('success').classList.remove('hidden');
     } else {
       if (data.error === 'invalid_city') showCity(true);

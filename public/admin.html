@@ -113,6 +113,13 @@
         </div>
         <label class="switch"><input type="checkbox" id="cityEnabled" aria-labelledby="cityToggleLbl"><span></span></label>
       </div>
+      <div class="setting">
+        <div>
+          <b id="verifyToggleLbl" data-i18n="verifyToggle"></b>
+          <small data-i18n="verifyHint"></small>
+        </div>
+        <label class="switch"><input type="checkbox" id="verifyRequired" aria-labelledby="verifyToggleLbl"><span></span></label>
+      </div>
       <button class="go" id="matchBtn" type="button" data-i18n="send"></button>
       <div class="pair hidden" id="pairBox"></div>
       <div class="result hidden" id="result"></div>
@@ -133,6 +140,7 @@ const I18N = {
     send: 'Pick a random pair', sending: 'Sending…', picking: 'Picking…',
     proposed: 'Proposed introduction', ageGap: 'Age gap', years: 'years', year: 'year', sameCity: 'Same city', yes: 'yes', no: 'no',
     gW: 'Woman', gM: 'Man', confirmSend: 'Send email to both', pickAgain: 'Pick again', recent: 'Recent introductions',
+    verifyToggle: 'Email confirmation', verifyHint: 'New users must confirm their email by link. If off, users are accepted immediately and no confirmation email is sent (mistyped or fake addresses can then receive introductions).',
     cityToggle: 'City field', cityHint: 'Show the city question on the signup form and prefer people from the same city.',
     e_settings_unavailable: 'Could not save the setting. Did you run migration.sql on the database?',
     none: 'No introductions yet.', sentTo: 'Introduction sent to:', age: 'age',
@@ -152,6 +160,7 @@ const I18N = {
     send: 'انتخاب یک جفت تصادفی', sending: 'در حال ارسال…', picking: 'در حال انتخاب…',
     proposed: 'آشنایی پیشنهادی', ageGap: 'اختلاف سن', years: 'سال', year: 'سال', sameCity: 'همشهری', yes: 'بله', no: 'خیر',
     gW: 'زن', gM: 'مرد', confirmSend: 'ارسال ایمیل برای هر دو', pickAgain: 'انتخاب دوباره', recent: 'آشنایی‌های اخیر',
+    verifyToggle: 'تأیید ایمیل', verifyHint: 'کاربر جدید باید ایمیلش را با لینک تأیید کند. اگر خاموش باشد، کاربران بلافاصله پذیرفته می‌شوند و ایمیل تأیید فرستاده نمی‌شود (ایمیل‌های اشتباه یا جعلی هم ممکن است ایمیل آشنایی بگیرند).',
     cityToggle: 'فیلد شهر', cityHint: 'سؤال شهر در فرم ثبت‌نام نمایش داده شود و همشهری‌ها در انتخاب اولویت داشته باشند.',
     e_settings_unavailable: 'ذخیره‌ی تنظیم ممکن نشد. آیا فایل migration.sql را روی دیتابیس اجرا کرده‌ای؟',
     none: 'هنوز آشنایی‌ای ارسال نشده.', sentTo: 'ایمیل آشنایی ارسال شد به:', age: 'سن',
@@ -211,6 +220,7 @@ async function loadStats() {
   $('sM').textContent = data.counts.males;
   $('sMatches').textContent = data.counts.matches;
   $('cityEnabled').checked = data.city_enabled !== false;
+  $('verifyRequired').checked = data.verify_required !== false;
 
   const box = $('recent');
   box.textContent = '';
@@ -254,22 +264,27 @@ $('loginBtn').addEventListener('click', async () => {
 });
 $('pw').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('loginBtn').click(); });
 
-$('cityEnabled').addEventListener('change', async (e) => {
-  const box = e.target, want = box.checked, out = $('result');
-  box.disabled = true;
-  try {
-    const { data } = await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ city_enabled: want }) });
-    if (!data.ok) {
+// Saves one on/off switch; puts it back if the server refuses.
+function bindToggle(id, key) {
+  $(id).addEventListener('change', async (e) => {
+    const box = e.target, want = box.checked, out = $('result');
+    box.disabled = true;
+    try {
+      const { data } = await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ [key]: want }) });
+      if (!data.ok) {
+        box.checked = !want;
+        out.className = 'result err';
+        out.textContent = errText(data.error || 'generic');
+      }
+    } catch (err) {
       box.checked = !want;
-      out.className = 'result err';
-      out.textContent = errText(data.error || 'generic');
+    } finally {
+      box.disabled = false;
     }
-  } catch (err) {
-    box.checked = !want;
-  } finally {
-    box.disabled = false;
-  }
-});
+  });
+}
+bindToggle('cityEnabled', 'city_enabled');
+bindToggle('verifyRequired', 'verify_required');
 
 function showMsg(kind, text) {
   const out = $('result');

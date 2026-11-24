@@ -1,4 +1,4 @@
-import { json, isAdmin, getCityEnabled } from '../../_lib/util.js';
+import { json, isAdmin, getCityEnabled, getVerifyRequired } from '../../_lib/util.js';
 
 export async function onRequestGet({ request, env }) {
   if (!isAdmin(request, env)) return json({ ok: false, error: 'unauthorized' }, 401);
@@ -24,5 +24,11 @@ export async function onRequestGet({ request, env }) {
       LIMIT 10`
   ).all();
 
-  return json({ ok: true, counts, recent, city_enabled: await getCityEnabled(env) });
+  return json({
+    ok: true,
+    counts,
+    recent,
+    city_enabled: await getCityEnabled(env),
+    verify_required: await getVerifyRequired(env),
+  });
 }

@@ -25,20 +25,28 @@ export function isAdmin(request, env) {
 export const escapeHtml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// Settings live in the `settings` table. City is ON unless the admin switched it off.
-export async function getCityEnabled(env) {
+// Admin switches live in the `settings` table. Every switch is ON unless the admin turned it off
+// (also when the table or row does not exist yet).
+async function getFlag(env, key) {
   try {
-    const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'city_enabled'").first();
+    const row = await env.DB.prepare('SELECT value FROM settings WHERE key = ?1').bind(key).first();
     return row ? row.value !== '0' : true;
   } catch {
-    return true; // settings table missing (migration not run yet)
+    return true;
   }
 }
 
-export async function setCityEnabled(env, enabled) {
+async function setFlag(env, key, enabled) {
   await env.DB.prepare(
-    "INSERT INTO settings (key, value) VALUES ('city_enabled', ?1) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+    'INSERT INTO settings (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
   )
-    .bind(enabled ? '1' : '0')
+    .bind(key, enabled ? '1' : '0')
     .run();
 }
+
+export const getCityEnabled = (env) => getFlag(env, 'city_enabled');
+export const setCityEnabled = (env, enabled) => setFlag(env, 'city_enabled', enabled);
+
+// Whether new users must confirm their email by link before they can be matched.
+export const getVerifyRequired = (env) => getFlag(env, 'verify_required');
+export const setVerifyRequired = (env, enabled) => setFlag(env, 'verify_required', enabled);

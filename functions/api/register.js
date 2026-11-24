@@ -1,4 +1,4 @@
-import { json, getCityEnabled, escapeHtml } from '../_lib/util.js';
+import { json, getCityEnabled, getVerifyRequired, escapeHtml } from '../_lib/util.js';
 import { cityKey } from '../_lib/city.js';
 import { sendMail, mailConfigured } from '../_lib/mail.js';
 
@@ -79,7 +79,9 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (body.consent !== true) return json({ ok: false, error: 'consent_required' }, 400);
-  if (!mailConfigured(env)) return json({ ok: false, error: 'mail_failed' }, 500);
+  // The admin can switch email confirmation off. Then nothing is sent at signup.
+  const verifyRequired = await getVerifyRequired(env);
+  if (verifyRequired && !mailConfigured(env)) return json({ ok: false, error: 'mail_failed' }, 500);
 
   // An already confirmed email is never changed by someone who only knows the address.
   // We answer "ok" either way, so nobody can probe which emails are registered.
@@ -88,7 +90,7 @@ export async function onRequestPost({ request, env }) {
     .first();
   if (existing) {
     if (Number(existing.verified) === 1) return json({ ok: true });
-    if (existing.verify_sent_at) {
+    if (verifyRequired && existing.verify_sent_at) {
       const sentAt = Date.parse(existing.verify_sent_at.replace(' ', 'T') + 'Z');
       if (Date.now() - sentAt < RESEND_COOLDOWN_MS) return json({ ok: true });
     }
@@ -105,6 +107,27 @@ export async function onRequestPost({ request, env }) {
     .first();
   if (recent && recent.n >= MAX_SIGNUPS_PER_IP_PER_HOUR) return json({ ok: false, error: 'rate_limited' }, 429);
   await env.DB.prepare('INSERT INTO signup_attempts (ip) VALUES (?1)').bind(ip).run();
+
+  // Confirmation switched off: accept the registration right away, no email.
+  if (!verifyRequired) {
+    await env.DB.prepare(
+      `INSERT INTO users (email, gender, age, city, city_key, verified)
+       VALUES (?1, ?2, ?3, ?4, ?5, 1)
+       ON CONFLICT(email) DO UPDATE SET
+         gender         = excluded.gender,
+         age            = excluded.age,
+         city           = COALESCE(excluded.city, users.city),
+         city_key       = COALESCE(excluded.city_key, users.city_key),
+         verified       = 1,
+         verify_token   = NULL,
+         verify_expires = NULL,
+         verify_sent_at = NULL
+       WHERE users.verified = 0`
+    )
+      .bind(email, gender, age, city, key)
+      .run();
+    return json({ ok: true });
+  }
 
   // Save (or refresh) the still-unconfirmed registration together with a fresh token.
   const token = randomToken();
