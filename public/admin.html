@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>randomchat admin</title>
+  <title>anymany admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -67,6 +67,16 @@
     .switch input:checked + span::after { transform: translateX(20px); }
     html[dir="rtl"] .switch input:checked + span::after { transform: translateX(-20px); }
     .switch input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .pair { border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-top: 14px; }
+    .pair h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); font-weight: 500; }
+    .pair .who { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+    .pair .who .em { direction: ltr; unicode-bidi: embed; font-weight: 600; }
+    .pair .meta { color: var(--muted); font-size: 13px; margin-top: 10px; }
+    .pair .btns { display: flex; gap: 10px; margin-top: 14px; }
+    .pair .btns button { flex: 1; padding: 12px; border-radius: 12px; font: inherit; font-weight: 600; cursor: pointer; }
+    .pair .btns button:disabled { opacity: .6; cursor: wait; }
+    .btn-send { border: 0; color: #fff; background: linear-gradient(135deg, var(--brand), var(--brand-2)); }
+    .btn-again { border: 1.5px solid var(--line); background: transparent; color: var(--ink); }
     .hidden { display: none !important; }
     .empty { color: var(--muted); font-size: 14px; }
   </style>
@@ -74,7 +84,7 @@
 <body>
 <div class="wrap">
   <div class="top">
-    <div class="logo">random<span>chat</span> <small data-i18n="admin" style="font-size:14px;color:var(--muted)"></small></div>
+    <div class="logo">any<span>many</span> <small data-i18n="admin" style="font-size:14px;color:var(--muted)"></small></div>
     <div class="tools">
       <button class="pill hidden" id="logout" data-i18n="logout" type="button"></button>
       <button class="pill" id="langBtn" type="button">فارسی</button>
@@ -104,6 +114,7 @@
         <label class="switch"><input type="checkbox" id="cityEnabled" aria-labelledby="cityToggleLbl"><span></span></label>
       </div>
       <button class="go" id="matchBtn" type="button" data-i18n="send"></button>
+      <div class="pair hidden" id="pairBox"></div>
       <div class="result hidden" id="result"></div>
     </div>
 
@@ -119,7 +130,9 @@ const I18N = {
   en: {
     admin: 'admin', logout: 'Log out', login: 'Admin login', password: 'Password', enter: 'Enter',
     users: 'Users', females: 'Women', males: 'Men', matches: 'Intros sent',
-    send: 'Send a random introduction', sending: 'Sending…', recent: 'Recent introductions',
+    send: 'Pick a random pair', sending: 'Sending…', picking: 'Picking…',
+    proposed: 'Proposed introduction', ageGap: 'Age gap', years: 'years', year: 'year', sameCity: 'Same city', yes: 'yes', no: 'no',
+    gW: 'Woman', gM: 'Man', confirmSend: 'Send email to both', pickAgain: 'Pick again', recent: 'Recent introductions',
     cityToggle: 'City field', cityHint: 'Show the city question on the signup form and prefer people from the same city.',
     e_settings_unavailable: 'Could not save the setting. Did you run migration.sql on the database?',
     none: 'No introductions yet.', sentTo: 'Introduction sent to:', age: 'age',
@@ -127,12 +140,18 @@ const I18N = {
     e_no_pair_available: 'No eligible pair left (need users of opposite gender who have not been introduced yet).',
     e_email_not_configured: 'Email is not configured (RESEND_API_KEY / FROM_EMAIL).',
     e_email_failed: 'The email provider rejected the request.',
+    e_pair_invalid: 'This pair is no longer valid (a user changed or was removed). Pick again.',
+    e_already_matched: 'These two were already introduced. Pick again.',
+    e_invalid_request: 'Invalid request.',
+    resetRejected: 'No other pair is left. The list of rejected pairs was reset: press the button to start over.',
     e_generic: 'Something went wrong.', langBtn: 'فارسی'
   },
   fa: {
     admin: 'مدیریت', logout: 'خروج', login: 'ورود مدیر', password: 'رمز عبور', enter: 'ورود',
     users: 'کاربران', females: 'زن', males: 'مرد', matches: 'آشنایی‌های ارسال‌شده',
-    send: 'ارسال یک آشنایی تصادفی', sending: 'در حال ارسال…', recent: 'آشنایی‌های اخیر',
+    send: 'انتخاب یک جفت تصادفی', sending: 'در حال ارسال…', picking: 'در حال انتخاب…',
+    proposed: 'آشنایی پیشنهادی', ageGap: 'اختلاف سن', years: 'سال', year: 'سال', sameCity: 'همشهری', yes: 'بله', no: 'خیر',
+    gW: 'زن', gM: 'مرد', confirmSend: 'ارسال ایمیل برای هر دو', pickAgain: 'انتخاب دوباره', recent: 'آشنایی‌های اخیر',
     cityToggle: 'فیلد شهر', cityHint: 'سؤال شهر در فرم ثبت‌نام نمایش داده شود و همشهری‌ها در انتخاب اولویت داشته باشند.',
     e_settings_unavailable: 'ذخیره‌ی تنظیم ممکن نشد. آیا فایل migration.sql را روی دیتابیس اجرا کرده‌ای؟',
     none: 'هنوز آشنایی‌ای ارسال نشده.', sentTo: 'ایمیل آشنایی ارسال شد به:', age: 'سن',
@@ -140,6 +159,10 @@ const I18N = {
     e_no_pair_available: 'جفت مناسبی باقی نمانده (به کاربران غیرهمجنسی نیاز است که قبلاً با هم آشنا نشده‌اند).',
     e_email_not_configured: 'ارسال ایمیل تنظیم نشده است (RESEND_API_KEY / FROM_EMAIL).',
     e_email_failed: 'سرویس ایمیل درخواست را رد کرد.',
+    e_pair_invalid: 'این جفت دیگر معتبر نیست (اطلاعات یکی از کاربران تغییر کرده یا حذف شده). دوباره انتخاب کن.',
+    e_already_matched: 'این دو نفر قبلاً با هم آشنا شده‌اند. دوباره انتخاب کن.',
+    e_invalid_request: 'درخواست نامعتبر است.',
+    resetRejected: 'جفت دیگری باقی نمانده. فهرست جفت‌های ردشده پاک شد: برای شروع دوباره دکمه را بزن.',
     e_generic: 'مشکلی پیش آمد.', langBtn: 'English'
   }
 };
@@ -148,6 +171,9 @@ try { lang = localStorage.getItem('rc_lang') || 'en'; } catch (e) {}
 const $ = (id) => document.getElementById(id);
 const t = (k) => I18N[lang][k];
 
+let rejected = [];   // pair keys the admin rejected during this visit
+let current = null;  // the pair currently proposed
+
 function applyLang() {
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
@@ -155,6 +181,7 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   $('langBtn').textContent = t('langBtn');
   try { localStorage.setItem('rc_lang', lang); } catch (e) {}
+  if (current) renderPair(current);
   if (token) loadStats();
 }
 $('langBtn').addEventListener('click', () => { lang = lang === 'en' ? 'fa' : 'en'; applyLang(); });
@@ -205,7 +232,7 @@ async function loadStats() {
 }
 
 function logout() {
-  token = '';
+  token = ''; current = null; $('pairBox').classList.add('hidden');
   try { sessionStorage.removeItem('rc_admin'); } catch (e) {}
   showPanel(false);
 }
@@ -244,13 +271,90 @@ $('cityEnabled').addEventListener('change', async (e) => {
   }
 });
 
-$('matchBtn').addEventListener('click', async () => {
-  const btn = $('matchBtn'), out = $('result');
-  btn.disabled = true; btn.textContent = t('sending'); out.className = 'result hidden';
+function showMsg(kind, text) {
+  const out = $('result');
+  out.className = 'result ' + kind;
+  out.textContent = text;
+}
+
+function renderPair(p) {
+  const box = $('pairBox');
+  box.textContent = '';
+  box.classList.remove('hidden');
+  const h = document.createElement('h3'); h.textContent = t('proposed'); box.appendChild(h);
+
+  p.pair.forEach((u) => {
+    const row = document.createElement('div'); row.className = 'who';
+    const e = document.createElement('span'); e.className = 'em'; e.textContent = u.email;
+    const d = document.createElement('span');
+    d.textContent = [t(u.gender === 'female' ? 'gW' : 'gM'), t('age') + ' ' + u.age, u.city].filter(Boolean).join(' · ');
+    row.append(e, d);
+    box.appendChild(row);
+  });
+
+  const meta = document.createElement('div'); meta.className = 'meta';
+  let line = t('ageGap') + ': ' + p.age_gap + ' ' + t(p.age_gap === 1 ? 'year' : 'years');
+  if (p.same_city !== null) line += ' · ' + t('sameCity') + ': ' + t(p.same_city ? 'yes' : 'no');
+  meta.textContent = line;
+  box.appendChild(meta);
+
+  const btns = document.createElement('div'); btns.className = 'btns';
+  const send = document.createElement('button'); send.type = 'button'; send.className = 'btn-send'; send.id = 'confirmBtn';
+  send.textContent = t('confirmSend'); send.addEventListener('click', confirmSend);
+  const again = document.createElement('button'); again.type = 'button'; again.className = 'btn-again'; again.id = 'againBtn';
+  again.textContent = t('pickAgain'); again.addEventListener('click', pickAgain);
+  btns.append(send, again);
+  box.appendChild(btns);
+}
+
+function setBusy(on) {
+  ['matchBtn', 'confirmBtn', 'againBtn'].forEach((id) => { const el = $(id); if (el) el.disabled = on; });
+}
+
+// Step 1: draw a proposal (nothing is sent).
+async function pick() {
+  setBusy(true);
+  $('result').className = 'result hidden';
   try {
-    const { data } = await api('/api/admin/match', { method: 'POST' });
-    out.classList.remove('hidden');
+    const { data } = await api('/api/admin/preview', { method: 'POST', body: JSON.stringify({ exclude: rejected }) });
     if (data.ok) {
+      current = data;
+      renderPair(data);
+    } else {
+      current = null;
+      $('pairBox').classList.add('hidden');
+      if (data.error === 'no_pair_available' && rejected.length) {
+        rejected = [];
+        showMsg('err', t('resetRejected'));
+      } else {
+        showMsg('err', errText(data.error || 'generic'));
+      }
+    }
+  } catch (e) {
+    showMsg('err', t('e_generic'));
+  } finally {
+    setBusy(false);
+  }
+}
+
+// "Pick again": remember this pair as rejected, then draw a different one.
+function pickAgain() {
+  if (current) rejected.push(current.key);
+  pick();
+}
+
+// Step 2: the admin approved the pair, now the email really goes out.
+async function confirmSend() {
+  if (!current) return;
+  const p = current;
+  setBusy(true);
+  $('confirmBtn').textContent = t('sending');
+  try {
+    const { data } = await api('/api/admin/match', { method: 'POST', body: JSON.stringify({ a: p.pair[0].id, b: p.pair[1].id }) });
+    if (data.ok) {
+      current = null;
+      $('pairBox').classList.add('hidden');
+      const out = $('result');
       out.className = 'result ok';
       out.textContent = t('sentTo') + ' ';
       data.pair.forEach((u, i) => {
@@ -261,15 +365,23 @@ $('matchBtn').addEventListener('click', async () => {
       });
       loadStats();
     } else {
-      out.className = 'result err';
-      out.textContent = errText(data.error || 'generic');
+      showMsg('err', errText(data.error || 'generic'));
+      if (data.error === 'pair_invalid' || data.error === 'already_matched') {
+        current = null;
+        $('pairBox').classList.add('hidden');
+      } else if ($('confirmBtn')) {
+        $('confirmBtn').textContent = t('confirmSend');
+      }
     }
   } catch (e) {
-    out.className = 'result err'; out.textContent = t('e_generic');
+    showMsg('err', t('e_generic'));
+    if ($('confirmBtn')) $('confirmBtn').textContent = t('confirmSend');
   } finally {
-    btn.disabled = false; btn.textContent = t('send');
+    setBusy(false);
   }
-});
+}
+
+$('matchBtn').addEventListener('click', pick);
 
 applyLang();
 if (token) { loadStats().then(ok => { if (ok) showPanel(true); }); }

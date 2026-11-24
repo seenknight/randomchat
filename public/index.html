@@ -74,6 +74,7 @@
     .success { text-align: center; padding: 10px 0; }
     .success .big { font-size: 52px; }
     .success p { font-size: 18px; line-height: 1.8; margin: 12px 0 0; }
+    .success p.note { font-size: 14px; color: var(--muted); }
     .hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
     .hidden { display: none !important; }
     footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 16px; }
@@ -129,6 +130,7 @@
       <div class="success hidden" id="success">
         <div class="big">🎉</div>
         <p data-i18n="success"></p>
+        <p class="note" data-i18n="successNote"></p>
       </div>
     </div>
     <footer data-i18n="footer"></footer>
@@ -149,12 +151,15 @@ const I18N = {
     consent: 'I am 18 or older, and I agree that my email address, age and city will be shared with the person I am matched with.',
     submit: 'Submit',
     success: 'Thank you. Your information was submitted successfully. Wait for an email from an anonymous user, and have fun!',
+    successNote: 'One more step: please confirm your email with the link we sent you (check your spam folder too). Only confirmed emails are matched.',
     footer: 'AnyMany - 2026',
     errors: {
       invalid_email: 'Please enter a valid email address.',
       invalid_gender: 'Please choose your gender.',
       invalid_age: 'Age must be a whole number between 18 and 100.',
       invalid_city: 'Please enter your city.',
+      mail_failed: 'We could not send the confirmation email. Please try again later.',
+      rate_limited: 'Too many attempts. Please try again later.',
       consent_required: 'Please confirm the checkbox to continue.',
       generic: 'Something went wrong. Please try again.'
     },
@@ -173,12 +178,15 @@ const I18N = {
     consent: 'من ۱۸ سال یا بیشتر دارم و موافقم که ایمیل، سن و شهرم برای فردی که با او آشنا می‌شوم نمایش داده شود.',
     submit: 'ثبت',
     success: 'سپاس. اطلاعات با موفقیت وارد شد. منتظر دریافت ایمیل از طرف یک کاربر ناشناس باشید و خوش بگذره!',
+    successNote: 'یک قدم دیگر: لطفاً ایمیل خود را با لینکی که برایتان فرستادیم تأیید کنید (پوشه‌ی اسپم را هم نگاه کنید). فقط ایمیل‌های تأییدشده در انتخاب شرکت داده می‌شوند.',
     footer: 'AnyMany',
     errors: {
       invalid_email: 'لطفاً یک ایمیل معتبر وارد کنید.',
       invalid_gender: 'لطفاً جنسیت خود را انتخاب کنید.',
       invalid_age: 'سن باید یک عدد صحیح بین ۱۸ تا ۱۰۰ باشد.',
       invalid_city: 'لطفاً شهر خود را وارد کنید.',
+      mail_failed: 'ارسال ایمیل تأیید ممکن نشد. لطفاً بعداً دوباره تلاش کنید.',
+      rate_limited: 'تعداد تلاش‌ها زیاد است. لطفاً بعداً دوباره تلاش کنید.',
       consent_required: 'برای ادامه، تیک تأیید را بزنید.',
       generic: 'مشکلی پیش آمد. لطفاً دوباره تلاش کنید.'
     },

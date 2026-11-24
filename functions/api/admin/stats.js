@@ -8,8 +8,9 @@ export async function onRequestGet({ request, env }) {
        COUNT(*)                                         AS total,
        COALESCE(SUM(gender = 'female'), 0)              AS females,
        COALESCE(SUM(gender = 'male'), 0)                AS males,
-       (SELECT COUNT(*) FROM matches)                   AS matches
-     FROM users`
+       (SELECT COUNT(*) FROM matches)                   AS matches,
+       (SELECT COUNT(*) FROM users WHERE verified = 0)  AS unverified
+     FROM users WHERE verified = 1`
   ).first();
 
   const { results: recent } = await env.DB.prepare(
